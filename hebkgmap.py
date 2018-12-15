@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 '''
 Model constructed by Background Group.
 Lian Jinyuan, Zhangshu, Guo Chengcheng, Jin Jing, Zhangjuan, Zhang Shu, et al.
@@ -82,8 +82,8 @@ else:
     slgti       = str(raw_input("Specific time range file(NONE):"))
 
 
-#HEADAS=os.getenv('HEADAS')
-HEADAS=os.getenv('REFPATH')
+HEADAS=os.getenv('HEADAS')
+#HEADAS=os.getenv('REFPATH')
 REFPATH=HEADAS+'/'
 
 
@@ -454,14 +454,17 @@ srcmap_BKG = srcmap_tab.field(3)
 #print(srcmap_LAT)
 
 '''Cal the spectra of blind detectors from map'''
+valid_flag = np.zeros(bkgmap_num)+1
 for ii in xrange(0,bkgmap_num):
     tmpindex = bkgmap_flag_uniq[ii]
     tmpspec  = srcmap_BKG[tmpindex,0:4608]
     tin1 = 16*256
     tin2 = 17*256
     bkgspec_bld_bkgmap[ii,0:256] = tmpspec[tin1:tin2]
+    if(np.mean(tmpspec[tin1:tin2])>900):
+        valid_flag[ii] = 0
 
-
+valid_flag_in = np.where(valid_flag == 1)
 #plt.figure()
 #plt.plot(dc_corr)
 #plt.show()
@@ -475,7 +478,7 @@ for detid in xrange(0,18):
         bkgspec_all_bkgmap[detid*bkgmap_num+ii,0] = detid
         bkgspec_all_bkgmap[detid*bkgmap_num+ii,1] = (bkgmap_start_time[ii]+bkgmap_start_time[ii])/2.
         bkgspec_all_bkgmap[detid*bkgmap_num+ii,2] = bkgmap_arr_expo[ii]
-        #print("ii===",ii,tmpindex,"tmpspec==",np.sum(tmpspec[0:256]))
+        #print("ii===",ii,tmpindex,"tmpspec==",np.sum(tmpspec[0:256]),np.sum(dc_corr))
         bkgspec_all_bkgmap[detid*bkgmap_num+ii,3:259] = tmpspec[tin1:tin2]*bkgmap_arr_expo[ii]
 
 
@@ -489,8 +492,8 @@ spec_bldmod_expo=0
 spec_ch = np.linspace(0,255,256)
 tmpexpo_arr = bkgspec_all_bkgmap[16*bkgmap_num:((16+1)*bkgmap_num),2]
 tmpspec_arr = bkgspec_all_bkgmap[16*bkgmap_num:((16+1)*bkgmap_num),3:259]
-spec_bldmod= np.sum(tmpspec_arr,axis=0)
-spec_bldmod_expo=np.sum(tmpexpo_arr)
+spec_bldmod= np.sum(tmpspec_arr[valid_flag_in],axis=0)
+spec_bldmod_expo=np.sum(tmpexpo_arr[valid_flag_in])
 
 print(bld_spec_all_expo,spec_bldmod_expo)
 print(np.sum(bld_spec_all),np.sum(spec_bldmod))
@@ -533,7 +536,7 @@ if sp_lc_select == 'spec':
     for ii in xrange(0,18):
         tmpexpo_arr = bkgspec_all_bkgmap[ii*bkgmap_num:((ii+1)*bkgmap_num),2]
         tmpspec_arr = bkgspec_all_bkgmap[ii*bkgmap_num:((ii+1)*bkgmap_num),3:259]
-        spec_cnt= np.sum(tmpspec_arr,axis=0)
+        spec_cnt= np.sum(tmpspec_arr[valid_flag_in],axis=0)
         if(ii >= 20):
             plt.figure()
             plt.plot(spec_cnt,'C1')
@@ -556,7 +559,7 @@ if sp_lc_select == 'spec':
         spec_counts  = spec_tab.field(1)
         spec_hdr     = spec_list[1].header
         spec_list.close()
-        tmpexpo=np.sum(tmpexpo_arr)
+        tmpexpo=np.sum(tmpexpo_arr[valid_flag_in])
         rr = (spec_counts/spec_hdr['exposure'])/(spec_cnt/tmpexpo)
         rr0=np.mean(rr[200:256])
         print(rr0)
@@ -615,16 +618,27 @@ if sp_lc_select == 'lc':
             continue
         print("For detector:", idid)
         for jj in xrange(0,bkgmap_num):
+            if(valid_flag[jj]==0):
+                lc_bkg_map[jj] = -1e6
+                continue
             bkgindex0 = idid*bkgmap_num + jj
             tmpchmin = chmin + 3
             tmpchmax = chmax + 3
             tmpexpo_arr = bkgspec_all_bkgmap[jj,2]
             tmpspec_arr = bkgspec_all_bkgmap[jj,tmpchmin:tmpchmax]
             spec_cnt= np.sum(tmpspec_arr)
+            #print(spec_cnt,tmpexpo_arr)
             lc_bkg_map[jj] = lc_bkg_map[jj] + spec_cnt/np.sum(tmpexpo_arr)
     #fbkg=interpolate.interp1d(lc_tim_map,lc_bkg_map,kind='cubic')
     #lc_bkg=fbkg(lc_time)
-    lc_bkg = np.interp(lc_time,lc_tim_map,lc_bkg_map)
+    #print(lc_bkg_map)
+    norm_in = np.where(lc_bkg_map >= -1e4)
+    #print(lc_bkg_map[norm_in])
+    lc_bkg = np.interp(lc_time,lc_tim_map[norm_in],lc_bkg_map[norm_in])
+    #print(lc_bkg_map)
+    #plt.figure()
+    #plt.plot(lc_tim_map[norm_in]-lc_tim_map[0],lc_bkg_map[norm_in])
+    #plt.show()
     print("The total light curve: ")
     outname = outnam + '_all.lc'
     write_lcurve(outname,lc_time,lc_bkg,lc_hdr)
