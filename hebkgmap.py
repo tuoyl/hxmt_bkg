@@ -33,7 +33,6 @@ import os
 import commands
 import sys
 import time
-from scipy import interpolate
 
 Ver = '2.0.5'
 
