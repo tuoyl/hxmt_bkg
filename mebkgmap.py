@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 '''
 Model constructed by Background Group.
 Lian Jinyuan, Zhangshu, Guo Chengcheng, Jin Jing, Zhangjuan, Zhang Shu, et al.
@@ -86,9 +86,9 @@ else:
     outnam      = str(raw_input("The prefix of output file name:"))
     slgti       = str(raw_input("Specific time range file(NONE):"))
 
-#HEADAS=os.getenv('HEADAS')
-HEADAS=os.getenv('REFPATH')
-REFPATH=HEADAS+'/'
+HEADAS=os.getenv('HEADAS')
+#HEADAS=os.getenv('REFPATH')
+REFPATH=HEADAS+'/refdata/'
 
 medetchans=1024
 mefpganumber = 9
@@ -197,7 +197,7 @@ def write_bkgspec(fname,channel,counts,expo,hdr_ext):
     hdr['CHANTYPE'] = "PI"
     hdr['DETCHANS'] = hdr_ext['DETCHANS']
     hdr['TELESCOP'] = 'HXMT'
-    hdr['INSTRUME'] = 'HE'
+    hdr['INSTRUME'] = 'ME'
 
     hdr["OBS_MODE"] = hdr_ext['OBS_MODE']
     hdr["DATE-OBS"] = hdr_ext['DATE-OBS']
