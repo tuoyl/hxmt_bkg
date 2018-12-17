@@ -83,7 +83,7 @@ else:
 
 HEADAS=os.getenv('HEADAS')
 #HEADAS=os.getenv('REFPATH')
-REFPATH=HEADAS+'/'
+REFPATH=HEADAS+'/refdata/'
 
 
 '''Check the time range in GTI'''
