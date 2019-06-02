@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 #!coding=utf-8
 """
 #Version: 1.0                            Jun. 3rd, 2018
@@ -49,6 +50,10 @@ PARAMETERS
         Please read the description. You can change this value in the end 
         of this script.
 
+Update:
+factor = 5.35
+
+
 
 QUESTIONS & BUGS:
     The author of this script is Yue ZHANG and MingYu GE, the idea comes 
@@ -64,7 +69,8 @@ import numpy as np
 from collections import OrderedDict
 from sys import argv
 import matplotlib.pyplot as plt
-print "-"*10,"import end","-"*10
+from mpl_toolkits.mplot3d import Axes3D
+print( "-"*10,"import end","-"*10 )
 ########################
 def comp4(a1,a2,b1,b2):
     """两个区间交集,a1<a2; b1<b2"""
@@ -173,7 +179,7 @@ def creatnewgti(gtiold, gtiout, tstart, tstop):
     ########
     newfits = fits.HDUList([primarydata,data1,data2])
     newfits.writeto(gtiout,overwrite=True) #for server
-#    newfits.writeto(gtiout,clobber=True)
+#    newfits.writeto(gtiout,overwrite=True)
     ######## fits写入新数据
     naxis2 = int(len(tstart))
     oldheader1['NAXIS2'] = naxis2
@@ -188,7 +194,7 @@ def creatnewgti(gtiold, gtiout, tstart, tstop):
     x1=olddata2.field(1)
     x1*=0
     newfits.close()
-    print 'done'
+    print( 'done')
 #    newfits.writeto(gtiout,overwrite=True)
    #^^^^^^^END
 def plot_check(binlst0, ctBig0, ctSmall0,
@@ -246,10 +252,10 @@ def newgti(sigma, dtime, binlst0i, ctBig0i, ctSmall0i, jji,
     cha = ctBig0i-ctSmall0i
     chamedian = np.median(cha)
     print('median==',chamedian)
-#    abscha = np.abs(cha-chamedian)
+    abscha = np.abs(cha-chamedian)
     cri = sigma*np.mean((ctBig0i+ctSmall0i)**0.5)
-#    badtimeB = abscha>cri  #找出不符合条件的时间点
-    badtimeB = cha>cri     #找出不符合条件的时间点
+    badtimeB = abscha>cri  #找出不符合条件的时间点
+#    badtimeB = cha>cri     #找出不符合条件的时间点
     for ii,ti in enumerate(binlst0i):
         if badtimeB[ii]:jji[ti]=False#将不符合的点赋值false
     ######## #为下次做准备，符合条件的点继续判断
@@ -267,6 +273,26 @@ def newgti(sigma, dtime, binlst0i, ctBig0i, ctSmall0i, jji,
     del binlst0i,ctBig0i,ctSmall0i
     return binlsta, ctBiga, ctSmalla, chamedian, jji
    #^^^^^^^END
+
+def write_baddec(fname,detid_bad,t1,t2,type_bad,status):
+    spec_col1 = fits.Column(name='DetID', format='I', array=detid_bad)
+    spec_col2 = fits.Column(name='TIMERANGE', format='20A', array=t1)
+    spec_col3 = fits.Column(name='TIMERANGE2', format='20A', array=t2)
+    spec_col4 = fits.Column(name='TYPE', format='20A', array=type_bad)
+    spec_col5 = fits.Column(name='STATUS', format='B', array=status)
+    cols = fits.ColDefs([spec_col1, spec_col2, spec_col3, spec_col4, spec_col5])
+    hdr = fits.Header()
+    hdr['EXTNAME']  = "detectorStatus"
+    hdr['TELESCOP'] = 'HXMT'
+    hdr['INSTRUME'] = 'ME'
+    hdr['VERSION'] = '1.00'
+    hdr['CREATOR'] = 'HXMTDAS'
+    hdr['UNITNUM'] = '1728'
+    hdr['TSTART'] = '0'
+    hdr['DATE'] = '2018-01-01T00:00:00'
+    hdu = fits.BinTableHDU.from_columns(cols,header=hdr)
+    hdu.writeto(fname,overwrite=True)
+
 def findgti(piname, gtiname, gtioutname, sigma=5, dtime=30):
     fpi = fits.open(piname)
     timelst = fpi[1].data.field('time')
@@ -276,23 +302,31 @@ def findgti(piname, gtiname, gtioutname, sigma=5, dtime=30):
     EvtPI = fpi[1].data.field('PI')
     fpi.close()
     #选择数据1,gti文件和pi文件所有gti扩展的交集
-    gti01, gti02 = Two_gti_1(piname, gtiname, 2, 1) #function
+    #gti01, gti02 = Two_gti_1(piname, gtiname, 2, 1) #function
     #选择数据2,使用gti交集筛选PI文件数据
+    fgti = fits.open(gtiname)
+    gti01_st = fgti[1].data.field('START')
+    gti01_sp = fgti[1].data.field('STOP')
+    fgti.close()
+
     rangeB0 = np.zeros((timelst.shape))
-    for i1, ta in enumerate(gti01):
-        tb = gti02[i1]
+    print(gti01_st,gti01_sp)
+    rangeB0 = np.zeros((timelst.shape))
+    for i1, ta in enumerate(gti01_st):
+        ta = np.floor(ta)+1
+        tb = np.floor(gti01_sp[i1])
         dt = tb-ta
         if dt<dtime:continue
-        rangeBi = np.logical_and(timelst>ta,timelst<tb)
+        rangeBi = np.logical_and(timelst>=ta,timelst<=tb)
         allrangeB = np.logical_or(rangeB0,rangeBi)
         rangeB0 = allrangeB
-    del rangeB0, gti01, gti02
+    del rangeB0
     timelst = timelst[allrangeB]
 #    Detid = Detid[allrangeB]
     Asicid0_5 = Asicid0_5[allrangeB]
     Fpgaid0_8 = Fpgaid0_8[allrangeB]
     EvtPI = EvtPI[allrangeB]
-    print 'chooseing the gradedata in the input gtifile'
+    print( 'chooseing the gradedata in the input gtifile')
     #^^^^^^^END
     #1得到大视场与小视场事例,2得到大小视场计数率
     boxid = Fpgaid0_8//3
@@ -317,10 +351,10 @@ def findgti(piname, gtiname, gtioutname, sigma=5, dtime=30):
     ctBig0 = ctBig0[gooddataB]
     binlst0 = binlst0[:-1][gooddataB]
 
-    tmpfac = np.median(ctSmall0/ctBig0)
-    print "factor===",tmpfac
-    factor = tmpfac
-    #factor = 1/0.17
+    #tmpfac = np.median(ctSmall0/ctBig0)
+    #print( "factor===",tmpfac)
+    #factor = tmpfac
+    factor = 5.35
 
 
     ctBig0 = factor*ctBig0
@@ -345,23 +379,239 @@ def findgti(piname, gtiname, gtioutname, sigma=5, dtime=30):
                         binlst0, ctBig0, ctSmall0)#forPlot
         Dmedian = chamedian0 - chamediani
         chamedian0 = chamediani
-        print 'loop'+str(loopi),'median=',chamediani,'Dmedian=',Dmedian
+        print( 'loop'+str(loopi),'median=',chamediani,'Dmedian=',Dmedian)
         loopi+=1
 #    plt.show()
     ######## 完成筛选，产生gti数据
-    gtistart, gtistop = togti(np.array(jj.values()), np.array(jj.keys()))
+    xx1 = np.array([i1 for i1 in jj.values()])
+    xx2 = np.array([i1 for i1 in jj.keys()])
+    gtistart, gtistop = togti(xx1, xx2)
+    #gtistart, gtistop = togti(np.array(jj.values()), np.array(jj.keys()))
     gtistart, gtistop = binnsecond(gtistart, gtistop, 5)
     gtistart1=[]; gtistop1=[]
 #    print(gtistop-gtistart)
     for i1,ta in enumerate(gtistart):
         tb = gtistop[i1]
         if tb-ta>dtime:
-            gtistart1.append(ta)
-            gtistop1.append(tb)
+            gtistart1.append(round(ta))
+            gtistop1.append(round(tb))
 #    print 'create new gtifile'
     print(np.array(gtistop1)-np.array(gtistart1))
     creatnewgti(gtiname, gtioutname, gtistart1, gtistop1)
    #^^^^^^^END
+def findgti_ver2(piname, gtiname, gtioutname, baddecfile, baddec_new, sigma=3, dtime=30,ratio_cut=1.5):
+    fpi = fits.open(piname)
+    timelst = fpi[1].data.field('time')
+    Detid = fpi[1].data.field('det_id')
+    Asicid0_5 = fpi[1].data.field('asic_id')
+    Fpgaid0_8 = fpi[1].data.field('fpga_id')
+    EvtPI = fpi[1].data.field('PI')
+    fpi.close()
+    #选择数据1,gti文件和pi文件所有gti扩展的交集
+    #gti01, gti02 = Two_gti_1(piname, gtiname, 2, 1) #function
+    #选择数据2,使用gti交集筛选PI文件数据
+    fgti = fits.open(gtiname)
+    gti01_st = fgti[1].data.field('START')
+    gti01_sp = fgti[1].data.field('STOP')
+    fgti.close()
+
+    rangeB0 = np.zeros((timelst.shape))
+    print(gti01_st,gti01_sp)
+    rangeB0 = np.zeros((timelst.shape))
+    for i1, ta in enumerate(gti01_st):
+        ta = np.floor(ta)+1
+        tb = np.floor(gti01_sp[i1])
+        dt = tb-ta
+        if dt<dtime:continue
+        rangeBi = np.logical_and(timelst>=ta,timelst<=tb)
+        allrangeB = np.logical_or(rangeB0,rangeBi)
+        rangeB0 = allrangeB
+    del rangeB0
+    '''Select the events by OLD gti'''
+    timelst = timelst[allrangeB]
+    Detid = Detid[allrangeB]
+    Asicid0_5 = Asicid0_5[allrangeB]
+    Fpgaid0_8 = Fpgaid0_8[allrangeB]
+    EvtPI = EvtPI[allrangeB]
+    print( 'chooseing the gradedata in the input gtifile')
+    #^^^^^^^END
+    #1得到大视场与小视场事例,2得到大小视场计数率
+    boxid = Fpgaid0_8//3
+    asic0_53 = Asicid0_5+6*Fpgaid0_8
+    asic0_17 = asic0_53-boxid*18
+    del boxid, asic0_53, Asicid0_5, Fpgaid0_8
+    FovSmallOnlyB = (((asic0_17>=0)&(asic0_17<=5)) | (asic0_17==7) | ((asic0_17>=12)&(asic0_17<=17))) 
+    FovBigOnlyB = ((asic0_17==8)|(asic0_17==9))
+    print(len(FovSmallOnlyB),len(EvtPI >=100))
+    FovSmallOnlyB = FovSmallOnlyB & (EvtPI >=100) & (EvtPI <=600)
+    FovBigOnlyB = FovBigOnlyB & (EvtPI >=100) & (EvtPI <=600)
+    timesmall = timelst[FovSmallOnlyB]
+    timebig = timelst[FovBigOnlyB]
+    del FovSmallOnlyB, FovBigOnlyB
+    ########
+    t0 = timelst[0]; te = timelst[-1]
+    binlst0 = np.arange(t0, te, 1)
+    ctSmall0 = np.histogram(timesmall, bins=binlst0)[0]
+    ctBig0 = np.histogram(timebig, bins=binlst0)[0]
+    gooddataB = np.logical_and(ctSmall0>0, ctBig0>0) #排除0时间段
+    ctSmall0 = ctSmall0[gooddataB]
+    ctBig0 = ctBig0[gooddataB]
+    binlst0 = binlst0[:-1][gooddataB]
+
+    #tmpfac = np.median(ctSmall0/ctBig0)
+    #print( "factor===",tmpfac)
+    #factor = tmpfac
+    factor = 5.35
+
+
+    ctBig0 = factor*ctBig0
+    ctSmall0 = smooth(ctSmall0, 20)
+    ctBig0 = smooth(ctBig0, 20)
+    jj = OrderedDict(zip(np.arange(t0, te-1, 1), gooddataB)) #每个时间点的好坏
+    del timesmall, timebig
+    del gooddataB
+    #^^^^^^^END
+    ######## 筛选好数据
+    #plt.plot(binlst0, ctSmall0, '.', label='small')
+    #plt.plot(binlst0, ctBig0,'.', label='small')
+    #plt.plot(binlst0, ctBig0-ctSmall0,'.', label='small')
+    #plt.plot(binlst0, ctBig0/ctSmall0,'.', label='small')
+    #plt.show()
+    binlsti = binlst0; ctBigi = ctBig0; ctSmalli = ctSmall0
+    Dmedian = 100; chamedian0 = 1e6
+    loopi=1
+    while Dmedian > 0.01:
+        binlsti, ctBigi, ctSmalli, chamediani, jj = \
+                newgti(sigma, dtime, binlsti,ctBigi, ctSmalli, jj, 
+                        binlst0, ctBig0, ctSmall0)#forPlot
+        Dmedian = chamedian0 - chamediani
+        chamedian0 = chamediani
+        print( 'loop'+str(loopi),'median=',chamediani,'Dmedian=',Dmedian)
+        loopi+=1
+#    plt.show()
+    ######## 完成筛选，产生gti数据
+    xx1 = np.array([i1 for i1 in jj.values()])
+    xx2 = np.array([i1 for i1 in jj.keys()])
+    gtistart, gtistop = togti(xx1, xx2)
+    #gtistart, gtistop = togti(np.array(jj.values()), np.array(jj.keys()))
+    gtistart, gtistop = binnsecond(gtistart, gtistop, 5)
+    gtistart1=[]; gtistop1=[]
+#    print(gtistop-gtistart)
+    for i1,ta in enumerate(gtistart):
+        tb = gtistop[i1]
+        if tb-ta>dtime:
+            gtistart1.append(round(ta))
+            gtistop1.append(round(tb))
+#    print 'create new gtifile'
+    print(np.array(gtistop1)-np.array(gtistart1))
+    creatnewgti(gtiname, gtioutname, gtistart1, gtistop1)
+    if(baddecfile!=''):
+        rangeB0 = np.zeros((timelst.shape))
+        for i1, ta in enumerate(gtistart1):
+            tb = gtistop1[i1]
+            dt = tb-ta
+            rangeBi = np.logical_and(timelst>ta,timelst<tb)
+            allrangeB = np.logical_or(rangeB0,rangeBi)
+            rangeB0 = allrangeB
+        del rangeB0
+        '''Select the events by NEW gti'''
+        timelst = timelst[allrangeB]
+        Detid   = Detid[allrangeB]
+        EvtPI   = EvtPI[allrangeB]
+        '''Read the bad detector information'''
+        badf = fits.open(baddecfile)
+        detid_bad = badf[1].data.field('DetID')
+        t1_bad = badf[1].data.field('TIMERANGE')
+        t2_bad = badf[1].data.field('TIMERANGE2')
+        typ_bad = badf[1].data.field('TYPE')
+        sta_bad = badf[1].data.field('STATUS')
+        badf.close()
+        '''Spectrum calcultion'''
+        medetchans=1024
+        det_num   =1728
+        spec_ch = np.linspace(0,medetchans-1,medetchans)
+        cha_ran = np.linspace(0,medetchans,medetchans+1)
+        did_ran = np.linspace(0,det_num,det_num+1)
+        spec_arr = np.zeros((det_num,medetchans))
+        spec_ratio=np.zeros((det_num,1))
+        spec_cnts=np.zeros((det_num,1))
+        spec_detid=np.zeros((det_num,1))
+        spec_flag =np.zeros((det_num,1))
+        spec_arr2d,xd,yd = np.histogram2d(Detid,EvtPI,bins=(did_ran,cha_ran))
+        print(np.size(spec_arr2d),np.size(xd),np.size(yd))
+        print(xd,yd)
+        #Xd,Yd=np.meshgrid(yd[0:1024],xd[0:1728])
+        #fig = plt.figure()
+        #ax0 = Axes3D(fig)
+        #ax0.plot_surface(Xd,Yd,spec_arr2d,rstride=1, cstride=1)
+        #plt.figure()
+        #plt.plot(np.sum(spec_arr2d,axis=0))
+        #plt.show()
+        #plt.figure()
+        #plt.plot(np.sum(spec_arr2d,axis=1))
+        #plt.show()
+
+        for ii in xrange(0,det_num):
+            spec_detid[ii] = ii
+            is_bad = np.where(detid_bad==ii)
+            #print(ii,is_bad,np.size(is_bad),10*32,11*32,28*32,29*32,46*32,47*32)
+            if (np.size(is_bad)==1): continue
+            if (ii>=10*32) & (ii < 11*32): continue
+            if (ii>=28*32) & (ii < 29*32): continue
+            if (ii>=46*32) & (ii < 47*32): continue
+            spec_flag[ii] = 1
+            tmpspec = spec_arr2d[ii,0:1024]
+            #rangeBi = np.where(Detid==ii)
+            #tmpspec,bins = np.histogram(EvtPI[rangeBi],bins=cha_ran,range=[0,medetchans])
+            #print(ii, ' Total number: ',np.sum(tmpspec))
+            #spec_arr[ii,0:medetchans] = tmpspec
+            tmpcnt1 = float(np.sum(tmpspec[0:200]))
+            tmpcnt2 = float(np.sum(tmpspec[200:400]))+1
+            spec_ratio[ii] = tmpcnt1/tmpcnt2
+            spec_cnts[ii]  = np.sum(tmpspec[200:400])
+            #print(ii,spec_ratio[ii],tmpcnt1,tmpcnt2)
+            #plt.figure()
+            #plt.plot(tmpspec)
+            #plt.plot(spec_arr2d[ii,0:1024])
+            #plt.show()
+        '''Search bad detectors'''
+        #print(spec_ratio)
+        #plt.figure()
+        #plt.plot(spec_ratio)
+        #plt.show()
+        good_index  = np.where(spec_flag==1)
+        spec_ratio2 = spec_ratio[good_index]
+        spec_detid2 = spec_detid[good_index]
+        spec_cnts2  = spec_cnts[good_index]
+        mspec_ratio = np.mean(spec_ratio2[np.where(spec_ratio2<=10)])
+        mspec_ratio_norm = spec_ratio2/mspec_ratio
+        ratio_bins = np.linspace(0,10,100)
+        tmprr,bins = np.histogram(mspec_ratio_norm,bins=ratio_bins)
+        #plt.figure()
+        #plt.plot(bins[0:99],tmprr)
+        #plt.show()
+        baddet_index2 = np.where(mspec_ratio_norm>ratio_cut)
+        detid_bad_new  =  spec_detid2[baddet_index2]
+        new_num1 = np.size(detid_bad)
+        new_num2 = np.size(detid_bad_new)
+        new_num = new_num1 + new_num2
+        print(new_num1,new_num2,detid_bad_new)
+        baddet_arr = np.zeros(new_num)
+        baddet_arr[0:(new_num1)] = detid_bad
+        if new_num2 > 0:
+            baddet_arr[new_num1:(new_num2+new_num1)] = detid_bad_new
+        baddet_arr=np.unique(baddet_arr)
+        new_num = np.size(baddet_arr)
+        t1_newbad = np.zeros(new_num,'|S20')
+        t2_newbad = np.zeros(new_num,'|S20')
+        typ_newbad = np.zeros(new_num,'|S20')
+        sta_newbad = np.zeros(new_num,'B')
+        for ii in xrange(0,new_num):
+            t1_newbad[ii]= '0'
+            t2_newbad[ii]= 'INDEF'
+            typ_newbad[ii]= 'bad'
+            sta_newbad[ii]= '0'
+        write_baddec(baddec_new,baddet_arr,t1_newbad,t2_newbad,typ_bad,sta_bad)
 def smooth(y, box_pts):
     box = np.ones(box_pts)/box_pts
     y_smooth = np.convolve(y, box, mode='same')
@@ -372,7 +622,16 @@ if __name__ == '__main__':
     gradename = argv[1]
     gti0name = argv[2]
     gtioutname = argv[3]
+    if(len(argv)==4):
+        findgti(gradename, gti0name, gtioutname, sigma=1.5, dtime=30)
+    if(len(argv)>=5):
+        baddecfile = argv[4]
+        baddec_new = argv[5]
+        ratio_cut = 1.5
+        if(len(argv)==7):
+            ratio_cut = float(argv[6])
+        findgti_ver2(gradename, gti0name, gtioutname, baddecfile,baddec_new, sigma=1.5, dtime=30, ratio_cut=1.5)
+    
 #    gradename = '/home/shlocal/zhangyueDATA/task_newgti/gtinew/ME/megrade_101.fits'
 #    gti0name = '/home/shlocal/zhangyueDATA/task_newgti/gtinew/ME/megti_101.fits'
 #    gtioutname='megtinew.fits'
-    findgti(gradename, gti0name, gtioutname, sigma=3, dtime=30)

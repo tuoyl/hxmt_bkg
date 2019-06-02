@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 print "*********** Pixel ID for ME ***********"
 
 for ii in xrange(0,1727):

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 '''
 Generate the spectrum with time bin time 16s or 32 seconds
 '''
@@ -13,7 +13,6 @@ from astropy.io import fits as pf
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import commands
 import sys
 import time
 
@@ -23,7 +22,7 @@ print "*********************************************************"
 
 if len(sys.argv)==2:
     if sys.argv[1]=='-h':
-        print "Example 1: blind_det16.FITS bldarr.fits DTime.FITS ehkname gtifile"
+        print "Example 1: hgti_abs lc.fits gti.txt out.txt"
         print "Example 2: Using interactive in prompt."
     sys.exit()
 elif len(sys.argv)>=2:
@@ -32,7 +31,7 @@ elif len(sys.argv)>=2:
     outgtifile=sys.argv[3]
 else:
     lcname     = str(raw_input("Light curve: "))
-    ingtiname  = str(raw_input("ASCII GTI file: "))
+    ingtiname  = str(raw_input("Relative time range file: "))
     outgtifile    = str(raw_input("Output GTI file:"))
 
 hdulist = pf.open(lcname)
