@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 #!coding=utf-8
 '''
 Model constructed by Background Group.
@@ -26,11 +25,13 @@ import sys
 import time
 from scipy import interpolate
 
+try:
+    # Python 2
+    xrange
+except NameError:
+    # Python 3, xrange is now named range
+    xrange = range
 
-Ver = '2.0.6'
-
-print( "*********************************************************" )
-print( "******************  Running HXMT Bkg   ******************" )
 print( "*********************************************************" )
 print( "*********************************************************" )
 print( "*********************************************************" )
@@ -67,7 +68,7 @@ REFPATH=HEADAS+'/'
 def is_ingti(START,STOP,tl,tu):
     num = len(START)
     is_gti = 0
-    for ii in range(0,num):
+    for ii in xrange(0,num):
         t0=START[ii]
         t1=STOP[ii]
         flag0 = (tl<=t0) & (tu>=t0)
@@ -89,7 +90,7 @@ def is_ingti2(START,STOP,ti):
             is_gti = 1
             return is_gti
     if num >= 2:
-        for ii in range(0,num):
+        for ii in xrange(0,num):
             t0=START[ii]
             t1=STOP[ii]
             flag0 = (ti>=t0) & (ti<=t1)
@@ -99,13 +100,13 @@ def is_ingti2(START,STOP,ti):
     return is_gti
 '''Give the tag for specific time'''
 def time_gtiflag(time,START,STOP,tflag):
-    for ii in range(0,len(time)):
+    for ii in xrange(0,len(time)):
         tflag[ii] = is_ingti2(START,STOP,time[ii])
 
 '''Give the index for specific time'''
 def flag_selection(tflag,tindex):
     cnt = 0
-    for ii in range(0,len(tflag)):
+    for ii in xrange(0,len(tflag)):
         if (tflag[ii] == 1):
             tindex[cnt] = ii
             cnt = cnt+1
@@ -121,7 +122,7 @@ def bkgmap_index(LON,LAT,ascend_flag ,step):
 '''Give the index for bkg map for an array'''
 def bkgmap_time(lon_arr,lat_arr,ascend_flag,bkgmap_flag):
     fnum = np.size(lon_arr)
-    for ii in range(0,fnum):
+    for ii in xrange(0,fnum):
         bkgmap_flag[ii] = bkgmap_index(lon_arr[ii],lat_arr[ii],ascend_flag[ii],5.)
 
 '''Give the data points for specific 5x5 size'''
@@ -330,7 +331,7 @@ srcmap_BKG = srcmap_tab.field(3)
 detid = 0
 tin1 = detid*256+26
 tin2 = (detid+1)*256
-for ii in range(0,ehk_num):
+for ii in xrange(0,ehk_num):
     tmpindex = bkgmap_flag[ii]
     tmpspec  = srcmap_BKG[tmpindex,0:4608]
     bkgspec_ID0[ii] = np.sum(tmpspec[tin1:tin2])

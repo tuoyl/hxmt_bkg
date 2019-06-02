@@ -1,6 +1,7 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
+ 
 
-print("*********** Detector ID catalogue ***********")
+print( "*********** Detector ID catalogue ***********" )
 
 #payloads = raw_input("what do you want?(HE/ME/LE/ALL):\n")
 payloads = 'ALL'

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python
 '''
 Model constructed by Background Group.
 Lian Jinyuan, Zhangshu, Guo Chengcheng, Jin Jing, Zhangjuan, Zhang Shu, et al.
@@ -74,6 +74,14 @@ import os
 import sys
 import time
 from scipy.optimize import curve_fit
+
+try:
+    # Python 2
+    xrange
+except NameError:
+    # Python 3, xrange is now named range
+    xrange = range
+
 Ver = '2.0.7'
 
 print( "*********************************************************" )
@@ -114,7 +122,7 @@ def check_argument():
         raise IOError("Error input argument, RUN 'lebkgmap -h' for help")
         sys.exit()
     sysflag = 0
-    for i in range(len_arg):
+    for i in xrange(len_arg):
         arg = sys.argv[i]
         if i == 0:continue
         arg_split = arg.split('=')
@@ -148,10 +156,9 @@ def check_argument():
             if argname == 'newgti':
                 slgti.append(argval)
                 sysflag = sysflag + 1
-#    if((sysflag>0)&(sysflag<8)):
-#        print(sysflag)
-#        raise IOError("Error input argument, RUN 'lebkgmap -h' for help")
-#        sys.exit()
+    if((sysflag>0)&(sysflag<8)):
+        raise IOError("Error input argument, RUN 'lebkgmap -h' for help")
+        sys.exit()
     if (sysflag==0):
         sp_lc_select.append(sys.argv[1])
         evtfilename.append(sys.argv[2])
@@ -198,7 +205,7 @@ if os.path.exists(REFPATH)==False:
 def is_ingti(START,STOP,tl,tu):
     num = np.size(START)
     is_gti = 0
-    for ii in range(0,num):
+    for ii in xrange(0,num):
         #print(ii,START)
         t0=START[ii]
         t1=STOP[ii]
@@ -221,7 +228,7 @@ def is_ingti2(START,STOP,ti):
             is_gti = 1
             return is_gti
     if num >= 2:
-        for ii in range(0,num):
+        for ii in xrange(0,num):
             t0=START[ii]
             t1=STOP[ii]
             flag0 = (ti>=t0) & (ti<=t1)
@@ -231,13 +238,13 @@ def is_ingti2(START,STOP,ti):
     return is_gti
 '''Give the tag for specific time'''
 def time_gtiflag(time,START,STOP,tflag):
-    for ii in range(0,len(time)):
+    for ii in xrange(0,len(time)):
         tflag[ii] = is_ingti2(START,STOP,time[ii])
 
 '''Give the index for specific time'''
 def flag_selection(tflag,tindex):
     cnt = 0
-    for ii in range(0,len(tflag)):
+    for ii in xrange(0,len(tflag)):
         if (tflag[ii] == 1):
             tindex[cnt] = ii
             cnt = cnt+1
@@ -253,7 +260,7 @@ def bkgmap_index(LON,LAT,step):
 '''Give the index for bkg map for an array'''
 def bkgmap_time(lon_arr,lat_arr,bkgmap_flag):
     fnum = np.size(lon_arr)
-    for ii in range(0,fnum):
+    for ii in xrange(0,fnum):
         bkgmap_flag[ii] = bkgmap_index(lon_arr[ii],lat_arr[ii],5.)
 
 '''Give the data points for specific 5x5 size'''
@@ -455,7 +462,7 @@ bldinfo_list.close()
 bldmapnum = np.size(bldmapstart)
 bldindex = -1
 tmid = (bldstart+bldstop)/2.0
-for ii in range(bldmapnum):
+for ii in xrange(bldmapnum):
     if (tmid>=bldmapstart[ii])&(tmid<bldmapstop[ii]):
         bldindex = ii
 
@@ -484,7 +491,7 @@ coeinfo_list.close()
 
 coemapnum = np.size(coemapstart)
 coeindex = -1
-for ii in range(bldmapnum):
+for ii in xrange(bldmapnum):
     if (tmid>=coemapstart[ii])&(tmid<coemapstop[ii]):
         coeindex = ii
 
@@ -594,8 +601,8 @@ if (np.abs(bb_src) <= 10):
     expo_10x10_1=0
     expo_10x10_2=0
     grid_num=0
-    for ii in range(0,11):
-        for jj in range(0,11):
+    for ii in xrange(0,11):
+        for jj in xrange(0,11):
             if bb_src+5.5-jj >= -10 and bb_src+5.5-jj <= +10:
                 src_index1 = int(ll_src+5-ii)+int((bb_src+10+5.5-jj))*360
                 mspec0 = mspec0 + gxbkg_map[src_index1,in1:in2]
@@ -621,7 +628,7 @@ if (np.abs(bb_src) <= 10):
     mspec = mspec0 + mspec1 + mspec2
     mspecerr=np.sqrt(mspec0err**2 + mspec1err**2 + mspec2err**2)
 
-    #for uu in range(0,192):
+    #for uu in xrange(0,192):
     #    print(uu,mspec0[uu],mspec1[uu],mspec2[uu],expo_10x10_0,expo_10x10_1,expo_10x10_2)
 
 
@@ -632,7 +639,7 @@ if (np.abs(bb_src) <= 10):
     fac_gxball_part = np.sum(mspec[154:183])/np.sum(simbkgmod_map_192[154:183])
     mspec0=mspec
     mspec = mspec-simbkgmod_map_192*fac_gxball_part
-    #for uu in range(0,192):
+    #for uu in xrange(0,192):
     #    print(uu,mspec0[uu],mspec[uu],simbkgmod_map_192[uu],fac_gxball_part,np.sum(mspec0[154:183]),np.sum(simbkgmod_map_192[154:183]))
     #src_index = int(ll_src)*20+int((bb_src+10))
     #tmpspec = gxbkg_map[src_index,in1:in2] + gxbkg_map[src_index,in3:in4]+ gxbkg_map[src_index,in3:in4]
@@ -727,7 +734,7 @@ cnt_obs_g10keV_whole = 0
 tmpexpo_whole = 0
 cnter = 0
 
-for jj in range(0,trnum):
+for jj in xrange(0,trnum):
     t0 = timbot[jj] + bldstart
     t1 = timrof[jj] + bldstart
     is_gti = is_ingti(START,STOP,t0,t1)
@@ -835,7 +842,7 @@ trnum = speccnter
 start_in_map=np.zeros(GTI_num)
 stop_in_map =np.zeros(GTI_num)
 cnt_map = 0
-for ii in range(0,GTI_num):
+for ii in xrange(0,GTI_num):
     tmpst1 = START[ii]
     tmpst2 = STOP[ii]
     tflag  = np.zeros(trnum)
@@ -864,7 +871,7 @@ spec_ch2= np.linspace(0,ledetchans-1,ledetchans)*chstep + 3.5
 tmpchmin = chmin
 tmpchmax = chmax+1
 '''
-for ii in range(0,trnum):
+for ii in xrange(0,trnum):
     tmpexpo_arr = bkgspec[ii,1]
     tmpspec_arr = bkgspec[ii,2:1538]
     spec_cnt = np.interp(spec_ch,spec_ch2,tmpspec_arr)
@@ -907,6 +914,7 @@ if (slgti!=''):
 '''++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'''
 
 if sp_lc_select == 'spec':
+    #import statsmodels.api as sm
     print("Calculate background spectra now.")
     tmpexpo_arr = bkgspec[0:trnum,1]
     tmpspec_arr = bkgspec[0:trnum,2:1538]
@@ -919,7 +927,7 @@ if sp_lc_select == 'spec':
         spec_cnt2= np.sum(tmpspec_arr,axis=0)
         spec_err2= np.sqrt(np.sum(tmpspec_err*tmpspec_err,axis=0))
     if(slgti_flag==1):
-        for jj in range(0,trnum):
+        for jj in xrange(0,trnum):
             if(tflag2[jj]==1):
                 tmpexpo = tmpexpo + tmpexpo_arr[jj]
                 spec_cnt2= spec_cnt2 + tmpspec_arr[jj,0:1536]
@@ -1003,7 +1011,7 @@ if sp_lc_select == 'lc':
         print("Illigal maximum channel, which will be set to 1535")
         chmmax=1535
 
-    for jj in range(0,trnum):
+    for jj in xrange(0,trnum):
         tmpchmin = chmin + 2
         tmpchmax = chmax + 2
         tmpexpo_arr = bkgspec[jj,1]
@@ -1059,7 +1067,7 @@ if sp_lc_select == 'lc':
     if(chmax > 1536):
         print("Illigal maximum channel, which will be set to 255")
         chmax=1535
-    for ii in range(0,GTI_num):
+    for ii in xrange(0,GTI_num):
         tmpin1 = int(start_in_map[ii])
         tmpin2 = int(stop_in_map[ii])
         tmpin3 = int(stop_in_map[ii])

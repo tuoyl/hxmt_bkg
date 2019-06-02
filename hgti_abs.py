@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python
 '''
 Generate the spectrum with time bin time 16s or 32 seconds
 '''

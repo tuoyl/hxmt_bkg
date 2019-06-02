@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python
 '''
 Model constructed by Background Group.
 Lian Jinyuan, Zhangshu, Guo Chengcheng, Jin Jing, Zhangjuan, Zhang Shu, et al.
@@ -11,9 +11,9 @@ Mail gemy@ihep.ac.cn
 
 Usage:
 
-hebkgmap lc/spec blind_det.FITS ehkfile.fits gtifile.fits deadtime.fits lcname/specname outnam_prefix (spec_time_arnge)
+hebkgmap lc/spec blind_det.FITS ehkfile.fits gtifile.fits deadtime.fits lcname/specname outnam_prefix
     lc/spec: lc for background lightcurve and spec for background light curve 
-    screen.FITS: should only include the events for blind detecters.
+    screen.FITS: include events of blind detecters.
     ehkfile.fits: the EHK file for the observation
     gtifile.fits: the GTI file for ME
     deadtime.fits: the Dead Time for ME
@@ -46,6 +46,13 @@ import os
 import sys
 import time
 from scipy import interpolate
+
+try:
+    # Python 2
+    xrange
+except NameError:
+    # Python 3, xrange is now named range
+    xrange = range
 
 Ver = '2.0.7'
 
@@ -89,7 +96,7 @@ def check_argument():
         raise IOError("Error input argument, RUN 'hebkgmap -h' for help")
         sys.exit()
     sysflag = 0
-    for i in range(len_arg):
+    for i in xrange(len_arg):
         arg = sys.argv[i]
         if i == 0:continue
         arg_split = arg.split('=')
@@ -108,7 +115,7 @@ def check_argument():
         if argname == 'gtifile':
             gtifile.append(argval)
             sysflag = sysflag + 1
-        if argname == 'dtnam':
+        if argname == 'dtname':
             dtname.append(argval)
             sysflag = sysflag + 1
         if argname == 'srcdat':
@@ -129,8 +136,7 @@ def check_argument():
             if argname == 'newgti':
                 slgti.append(argval)
                 sysflag = sysflag + 1
-    if not len(sys.argv)==10:
-        print(len(sys.argv))
+    if not (len(sys.argv)==10):
         raise IOError("Error input argument, RUN 'hebkgmap -h' for help")
         sys.exit()
     if (sysflag==0):
@@ -147,7 +153,6 @@ def check_argument():
             slgti.append('')
         if (len(sys.argv)>=11):
             slgti.append(sys.argv[10])
-    
     return sp_lc_select[0],evtfilename[0],ehkname[0],gtifile[0],dtname[0],sl_name[0],chmin[0],chmax[0],outnam[0],slgti[0]
 
 
@@ -186,7 +191,7 @@ if os.path.exists(REFPATH)==False:
 def is_ingti(START,STOP,tl,tu):
     num = len(START)
     is_gti = 0
-    for ii in range(0,num):
+    for ii in xrange(0,num):
         t0=START[ii]
         t1=STOP[ii]
         flag0 = (tl<=t0) & (tu>=t0)
@@ -208,7 +213,7 @@ def is_ingti2(START,STOP,ti):
             is_gti = 1
             return is_gti
     if num >= 2:
-        for ii in range(0,num):
+        for ii in xrange(0,num):
             t0=START[ii]
             t1=STOP[ii]
             flag0 = (ti>=t0) & (ti<=t1)
@@ -218,13 +223,13 @@ def is_ingti2(START,STOP,ti):
     return is_gti
 '''Give the tag for specific time'''
 def time_gtiflag(time,START,STOP,tflag):
-    for ii in range(0,len(time)):
+    for ii in xrange(0,len(time)):
         tflag[ii] = is_ingti2(START,STOP,time[ii])
 
 '''Give the index for specific time'''
 def flag_selection(tflag,tindex):
     cnt = 0
-    for ii in range(0,len(tflag)):
+    for ii in xrange(0,len(tflag)):
         if (tflag[ii] == 1):
             tindex[cnt] = ii
             cnt = cnt+1
@@ -240,7 +245,7 @@ def bkgmap_index(LON,LAT,ascend_flag ,step):
 '''Give the index for bkg map for an array'''
 def bkgmap_time(lon_arr,lat_arr,ascend_flag,bkgmap_flag):
     fnum = np.size(lon_arr)
-    for ii in range(0,fnum):
+    for ii in xrange(0,fnum):
         bkgmap_flag[ii] = bkgmap_index(lon_arr[ii],lat_arr[ii],ascend_flag[ii],5.)
 
 '''Give the data points for specific 5x5 size'''
@@ -431,7 +436,7 @@ dtime_num = np.size(dtime_time)
 dtime_arr = np.zeros((dtime_num,18))
 dt_cyc = np.zeros(dtime_num)
 
-for ii in range(0,18):
+for ii in xrange(0,18):
     if ii<=5:
         dt_cyc = dtime_cyc[0:(dtime_num),0]
     if ii>=6 & ii <=11:
@@ -462,8 +467,8 @@ print(np.size(dtime_time))
 print(dtime_num)
 
 '''Cal the dead time correction for every time interval'''
-for ii in range(0,18):
-    for jj in range(0,bkgmap_num):
+for ii in xrange(0,18):
+    for jj in xrange(0,bkgmap_num):
         t0 = bkgmap_start_time[jj]
         t1 = bkgmap_stop_time[jj]
         tflag2 = np.zeros(dtime_num,dtype='int')
@@ -488,7 +493,7 @@ tt_obs0 = np.mean(dtime_time)
 
 dc_corr = np.zeros(4608);
 
-for ii in range(0,4608):
+for ii in xrange(0,4608):
     tmpdc_spec = dc_spec[0:dc_num,ii]
     dc_corr[ii] = np.interp(tt_obs0,dc_time,tmpdc_spec)
 
@@ -515,15 +520,15 @@ cha_data = np.loadtxt(REFPATH+'mchran.txt')
 cha_data_st = np.zeros((18,6))
 cha_data_sp = np.zeros((18,6))
 
-for ii in range(0,18):
-    for jj in range(0,6):
+for ii in xrange(0,18):
+    for jj in xrange(0,6):
         if (jj==0):
             cha_data_st[ii,jj] = int(cha_data[ii,jj])
         if (jj>0):
             cha_data_st[ii,jj] = int(cha_data[ii,jj])+1
 
-for ii in range(0,18):
-    for jj in range(1,7):
+for ii in xrange(0,18):
+    for jj in xrange(1,7):
         cha_data_sp[ii,jj-1] = int(cha_data[ii,jj])
 
 
@@ -533,7 +538,7 @@ channel = np.linspace(0,255,256)
 bld_spec_all_expo=0
 bld_spec_all_deadt=np.sum(bkgmap_dtt[16,0:bkgmap_num])
 bld_spec_all=np.zeros(256)
-for jj in range(0,bkgmap_num):
+for jj in xrange(0,bkgmap_num):
     t0 = bkgmap_start_time[jj]
     t1 = bkgmap_stop_time[jj]
     ttindex = np.where((evt_time >= t0) & (evt_time < t1+1))
@@ -553,7 +558,7 @@ print("Dead time correction coeffient:",bld_spec_all_deadc,bld_spec_all_expo,bld
 
 '''
 tmpspec,bins = np.histogram(evt_cha,bins=cha_ran,range=[0,255])
-for ii in range(0,256):
+for ii in xrange(0,256):
     print( bins[ii],tmpspec[ii], np.size(np.where(evt_cha == ii)))
 '''
 
@@ -587,7 +592,7 @@ srclist2.close()
 
 '''Cal the spectra of blind detectors from map'''
 valid_flag = np.zeros(bkgmap_num)+1
-for ii in range(0,bkgmap_num):
+for ii in xrange(0,bkgmap_num):
     tmpindex = bkgmap_flag_uniq[ii]
     tmpspec  = srcmap_BKG[tmpindex,0:4608]
     tin1 = 16*256
@@ -601,10 +606,10 @@ valid_flag_in = np.where(valid_flag == 1)
 #plt.plot(dc_corr)
 #plt.show()
 '''Cal the spectra of all detectors from map'''
-for detid in range(0,18):
+for detid in xrange(0,18):
     tin1 = detid*256
     tin2 = (detid+1)*256
-    for ii in range(0,bkgmap_num):
+    for ii in xrange(0,bkgmap_num):
         tmpindex = bkgmap_flag_uniq[ii]
         tmpspec  = srcmap_BKG[tmpindex,0:4608] - dc_corr
         bkgspec_all_bkgmap[detid*bkgmap_num+ii,0] = detid
@@ -646,7 +651,7 @@ print(np.sum(bld_spec_all),np.sum(spec_bldmod))
 #plt.show()
 
 coe_arr = np.zeros(6)
-for ii in range(0,6):
+for ii in xrange(0,6):
     in1 = int(cha_data_st[16,ii])
     in2 = int(cha_data_sp[16,ii])+1
     print(in1,in2,np.sum(spec_bldmod[in1:in2])/bld_spec_all_expo,np.sum(bld_spec_all[in1:in2]/(1-bld_spec_all_deadc))/bld_spec_all_expo)
@@ -697,7 +702,7 @@ if sp_lc_select == 'spec':
     print(src_name)
     print("Calculate background spectra now.")
     spec_ch = np.linspace(0,255,256)
-    for ii in range(0,18):
+    for ii in xrange(0,18):
         tmpexpo_arr = bkgspec_all_bkgmap[ii*bkgmap_num:((ii+1)*bkgmap_num),2]
         tmpspec_arr = bkgspec_all_bkgmap[ii*bkgmap_num:((ii+1)*bkgmap_num),3:259]
         tmpspec_err = bkgspec_err_bkgmap[ii*bkgmap_num:((ii+1)*bkgmap_num),3:259]
@@ -709,13 +714,13 @@ if sp_lc_select == 'spec':
             spec_cnt= np.sum(tmpspec_arr[valid_flag_in],axis=0)
             spec_err= np.sqrt(np.sum(tmpspec_err[valid_flag_in]*tmpspec_err[valid_flag_in],axis=0))
         if(slgti_flag==1):
-            for jj in range(0,bkgmap_num):
+            for jj in xrange(0,bkgmap_num):
                 if(tflag2[jj]==1):
                     tmpexpo = tmpexpo + tmpexpo_arr[jj]
                     spec_cnt= spec_cnt + tmpspec_arr[jj,0:256]
                     spec_err= np.sqrt(spec_err*spec_err+tmpspec_err[jj,0:256]*tmpspec_err[jj,0:256])
 
-        for jj in range(0,6):
+        for jj in xrange(0,6):
             in1 = int(cha_data_st[16,jj])
             in2 = int(cha_data_sp[16,jj])+1
             #print('iiiiiii',in1,in2,coe_arr[jj])
@@ -805,11 +810,11 @@ if sp_lc_select == 'lc':
         print("Illigal maximum channel, which will be set to 255")
         chmmax=255
 
-    for idid in range(0,18):
+    for idid in xrange(0,18):
         if (idid == 16):
             continue
         print("For detector:", idid)
-        for jj in range(0,bkgmap_num):
+        for jj in xrange(0,bkgmap_num):
             if(valid_flag[jj]==0):
                 lc_bkg_map[jj] = -1e6
                 continue
@@ -821,7 +826,7 @@ if sp_lc_select == 'lc':
             tmpchmin = chmin + 3
             tmpchmax = chmax + 3 +1
             tmpexpo_arr = bkgspec_all_bkgmap[jj,2]
-            print(tmpexpo_arr)
+            #print(tmpexpo_arr)
             tmpspec_arr = bkgspec_all_bkgmap[jj,tmpchmin:tmpchmax]
             tmpspec_err = bkgspec_err_bkgmap[jj,tmpchmin:tmpchmax]
             spec_cnt= np.sum(tmpspec_arr)
@@ -846,12 +851,12 @@ if sp_lc_select == 'lc':
 
 
 '''
-    for idid in range(0,18):
+    for idid in xrange(0,18):
         if (idid == 16):
             continue
         print("For detector:", idid)
-        for ii in range(0,lc_num):
-            for jj in range(0,bkgmap_num):
+        for ii in xrange(0,lc_num):
+            for jj in xrange(0,bkgmap_num):
                 bkgindex0 = idid*bkgmap_num + jj
                 tt0 = bkgmap_start_time[jj]
                 tt1 = bkgmap_stop_time[jj] + 1
@@ -866,10 +871,10 @@ if sp_lc_select == 'lc':
     
     outname = outnam + '_all.lc'
     write_lcurve(outname,lc_time,lc_bkg,lc_hdr)
-    for idid in range(0,1):
+    for idid in xrange(0,1):
         print("For detector:", idid)
-        for ii in range(0,lc_num):
-            for jj in range(0,bkgmap_num):
+        for ii in xrange(0,lc_num):
+            for jj in xrange(0,bkgmap_num):
                 bkgindex0 = idid*bkgmap_num + jj
                 tt0 = bkgmap_start_time[jj]
                 tt1 = bkgmap_stop_time[jj] + 1

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/python
 '''
 Model constructed by Background Group.
 Lian Jinyuan, Zhangshu, Guo Chengcheng, Jin Jing, Zhangjuan, Zhang Shu, et al.
@@ -25,7 +25,6 @@ mebkgmap lc/spec blind_det.FITS ehkfile.fits gtifile.fits deadtime.fits lcname/s
     chmin: minimum channel for light curve
     chmax: maximum channel for light curve
     outnam_prefix: the output prefix for the spectrum
-    baddetfile: the bad pixel infomation for ME
 
 Using interactive method in prompt.	
 
@@ -51,6 +50,13 @@ import os
 import sys
 import time
 
+try:
+    # Python 2
+    xrange
+except NameError:
+    # Python 3, xrange is now named range
+    xrange = range
+
 Ver = '2.0.7'
 
 print( "*********************************************************")
@@ -63,9 +69,9 @@ print( "*********************************************************")
 print( "HXMT background for Insight-HXMT/ME, ver-",Ver)
 print( "The energy range for background lightcurve should be the same as source lightcurve")
 
-uage_method1 = 'Method 1: mebkgmap lc/spec screen.FITS ehkfile.fits gtifile.fits deadtime.fits tempname lcname/specname chmin chmax outnam_prefix medetectorstatus'
+uage_method1 = 'Method 1: mebkgmap lc/spec screen.FITS ehkfile.fits gtifile.fits deadtime.fits tempname lcname/specname chmin chmax outnam_prefix'
 uage_method2 = 'Method 2: Using interactive method in prompt.'
-uage_method3 = 'Method 3: mebkgmap sflag=lc/spec evtfile=screen.FITS ehkfile=ehkfile.fits gtifile=gtifile.fits dtname=deadtime.fits tempname=tempname srcdat=lcname/specname chmin=chmin chmax=chmax outnam=outnam_prefix medetectorstatus=medetectorstatus'
+uage_method3 = 'Method 3: mebkgmap sflag=lc/spec evtfile=screen.FITS ehkfile=ehkfile.fits gtifile=gtifile.fits dtname=deadtime.fits tempname=tempname srcdat=lcname/specname chmin=chmin chmax=chmax outnam=outnam_prefix'
 
 def print_usage(uage_method1,uage_method2,uage_method3):
     print(uage_method1)
@@ -94,7 +100,7 @@ def check_argument():
         raise IOError("Error input argument, RUN 'mebkgmap -h' for help")
         sys.exit()
     sysflag = 0
-    for i in range(len_arg):
+    for i in xrange(len_arg):
         arg = sys.argv[i]
         if i == 0:continue
         arg_split = arg.split('=')
@@ -142,10 +148,9 @@ def check_argument():
             if argname == 'newgti':
                 slgti.append(argval)
                 sysflag = sysflag + 1
-#    if((sysflag>0)&(sysflag<12):
-#        print(sysflag)
-#        raise IOError("Error input argument, RUN 'mebkgmap -h' for help")
-#        sys.exit()
+    if((sysflag>0)&(sysflag<11)):
+        raise IOError("Error input argument, RUN 'mebkgmap -h' for help")
+        sys.exit()
     if (sysflag==0):
         sp_lc_select.append(sys.argv[1])
         evtfilename.append(sys.argv[2])
@@ -164,18 +169,6 @@ def check_argument():
             baddetfile.append(sys.argv[11])
         if (len(sys.argv)>=13):
             slgti.append(sys.argv[12])
-    print(sp_lc_select[0])
-    print(evtfilename[0])
-    print(ehkname[0])
-    print(gtifile[0])
-    print(dtname[0])
-    print(tempname[0])
-    print(sl_name[0])
-    print(chmin[0])
-    print(chmax[0])
-    print(outnam[0])
-    print(baddetfile[0])
-    print(slgti[0])
     return sp_lc_select[0],evtfilename[0],ehkname[0],gtifile[0],dtname[0],tempname[0],sl_name[0],chmin[0],chmax[0],outnam[0],baddetfile[0],slgti[0]
 
 if len(sys.argv)==2:
@@ -217,7 +210,7 @@ mefpganumber = 9
 def is_ingti(START,STOP,tl,tu):
     num = len(START)
     is_gti = 0
-    for ii in range(0,num):
+    for ii in xrange(0,num):
         t0=START[ii]
         t1=STOP[ii]
         flag0 = (tl<=t0) & (tu>=t0)
@@ -239,7 +232,7 @@ def is_ingti2(START,STOP,ti):
             is_gti = 1
             return is_gti
     if num >= 2:
-        for ii in range(0,num):
+        for ii in xrange(0,num):
             t0=START[ii]
             t1=STOP[ii]
             flag0 = (ti>=t0) & (ti<=t1)
@@ -249,13 +242,13 @@ def is_ingti2(START,STOP,ti):
     return is_gti
 '''Give the tag for specific time'''
 def time_gtiflag(time,START,STOP,tflag):
-    for ii in range(0,len(time)):
+    for ii in xrange(0,len(time)):
         tflag[ii] = is_ingti2(START,STOP,time[ii])
 
 '''Give the index for specific time'''
 def flag_selection(tflag,tindex):
     cnt = 0
-    for ii in range(0,len(tflag)):
+    for ii in xrange(0,len(tflag)):
         if (tflag[ii] == 1):
             tindex[cnt] = ii
             cnt = cnt+1
@@ -271,7 +264,7 @@ def bkgmap_index(LON,LAT,step):
 '''Give the index for bkg map for an array'''
 def bkgmap_time(lon_arr,lat_arr,bkgmap_flag):
     fnum = np.size(lon_arr)
-    for ii in range(0,fnum):
+    for ii in xrange(0,fnum):
         bkgmap_flag[ii] = bkgmap_index(lon_arr[ii],lat_arr[ii],5.)
 
 '''Give the data points for specific 5x5 size'''
@@ -396,7 +389,7 @@ def smallfov_selection(detid,is_flag):
     small_fov_asic = np.array([0,1,2,3,4,5,6,7,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,47,48,49,50, 51,52,53])
     smallfov_num = np.size(small_fov_asic)
     detid_num = np.size(detid)
-    for ii in range(0,detid_num):
+    for ii in xrange(0,detid_num):
         issfov = is_smallfov(detid[ii],small_fov_asic)
         if (np.size(issfov)==1):
             is_flag[ii] = 1
@@ -464,7 +457,7 @@ dtime_time = dtime_tab.field(0)
 dtime_num = np.size(dtime_time)
 dtime_arr = np.zeros((dtime_num,mefpganumber))
 
-for ii in range(0,mefpganumber):
+for ii in xrange(0,mefpganumber):
     tmpdt = dtime_tab.field(ii+1)
     dtime_arr[0:(dtime_num),ii] = tmpdt
 dtimelist.close()
@@ -479,7 +472,7 @@ dtime_arr=dtime_arr[tindex[0:(dtime_num)],0:mefpganumber]
 
 dtime_cor=np.zeros(dtime_num)
 
-for jj in range(0,dtime_num):
+for jj in xrange(0,dtime_num):
     tmpdeadtime = dtime_arr[jj,0:9]
     dtime_cor[jj] = (tmpdeadtime[1]+tmpdeadtime[4]+tmpdeadtime[7])/3.0
 
@@ -488,8 +481,8 @@ dtf = 1-np.mean(dtime_cor)
 bkgmap_dtc = np.zeros((mefpganumber,bkgmap_num))
 
 '''Cal the dead time correction for every time interval'''
-for ii in range(0,mefpganumber):
-    for jj in range(0,bkgmap_num):
+for ii in xrange(0,mefpganumber):
+    for jj in xrange(0,bkgmap_num):
         t0 = bkgmap_start_time[jj]
         t1 = bkgmap_stop_time[jj]
         tflag = np.zeros(dtime_num,dtype='int')
@@ -548,7 +541,7 @@ channel = np.linspace(0,medetchans-1,medetchans)#@
 
 '''Obtain the blind spectra for each 5x5 degrees'''
 totalexpo_bld = 0
-for jj in range(0,bkgmap_num):
+for jj in xrange(0,bkgmap_num):
     t0 = bkgmap_start_time[jj]
     t1 = bkgmap_stop_time[jj]
     ttindex = np.where((evt_time >= t0) & (evt_time < t1+1))
@@ -574,7 +567,7 @@ srcmap_BKG = srcmap_tab.field(3)
 
 '''Cal the spectra of blind detectors from map'''
 totalexpo_map = 0
-for ii in range(0,bkgmap_num):
+for ii in xrange(0,bkgmap_num):
     tmpindex = bkgmap_flag_uniq[ii]
     tmpspec  = srcmap_BKG[tmpindex,0:2048]
     tmpexpo = bkgmap_arr_expo[ii]
@@ -631,7 +624,7 @@ if (len(baddetfile)>0):
     tindex5 = np.zeros(pixel_fac_num,dtype='int')
     smallfov_selection(pixel_fac_ID,issfov_flag1)
     print(badpixel_new)
-    for ii in range(0,pixel_fac_num):
+    for ii in xrange(0,pixel_fac_num):
         tmptmp = np.where(badpixel_new == pixel_fac_ID[ii])
         if (np.size(tmptmp)>=1):
             issfov_flag1[ii] = 0
@@ -646,7 +639,7 @@ print("Blind detector spectrum correction ratio: %f", rr0, " Temp: ", coe_Temp, 
 '''Cal the spectra of all detectors from map'''
 tin1 = 1024
 tin2 = 2048
-for ii in range(0,bkgmap_num):
+for ii in xrange(0,bkgmap_num):
     tmpindex = bkgmap_flag_uniq[ii]
     tmpspec  = srcmap_BKG[tmpindex,0:2048]
     bkgspec_all_bkgmap[ii,0] = 0
@@ -669,7 +662,7 @@ start_in_map=np.zeros(GTI_num)
 stop_in_map =np.zeros(GTI_num)
 time_bkgmod = bkgspec_all_bkgmap[0:bkgmap_num,1]
 cnt_map = 0
-for ii in range(0,GTI_num):
+for ii in xrange(0,GTI_num):
     tmpst1 = START[ii]
     tmpst2 = STOP[ii]
     tflag  =np.zeros(bkgmap_num)
@@ -694,7 +687,7 @@ raterr_bkgmod = np.zeros(bkgmap_num)
 tmpchmin = chmin
 tmpchmax = chmax+1
 
-for ii in range(0,bkgmap_num):
+for ii in xrange(0,bkgmap_num):
     tmpexpo_arr = bkgspec_all_bkgmap[ii,2]
     tmpspec_arr = bkgspec_all_bkgmap[ii,3:1027]
     spec_cnt2= np.sum(tmpspec_arr[tmpchmin:tmpchmax])
@@ -764,7 +757,7 @@ if sp_lc_select == 'spec':
         spec_cnt= np.sum(tmpspec_arr,axis=0)
         #spec_err= np.sqrt(np.sum(tmpspec_err*tmpspec_err,axis=0))
     if(slgti_flag==1):
-        for jj in range(0,bkgmap_num):
+        for jj in xrange(0,bkgmap_num):
             if(tflag2[jj]==1):
                 tmpexpo = tmpexpo + tmpexpo_arr[jj]
                 spec_cnt= spec_cnt + tmpspec_arr[jj,0:1024]
@@ -837,7 +830,7 @@ if sp_lc_select == 'lc':
         print("Illigal maximum channel, which will be set to 1023")
         chmax=1023
     print("The total light curve: ")
-    for ii in range(0,GTI_num):
+    for ii in xrange(0,GTI_num):
         tmpin1 = int(start_in_map[ii])
         tmpin2 = int(stop_in_map[ii])
         tmpin3 = int(stop_in_map[ii])

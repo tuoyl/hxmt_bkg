@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 #
 #
 #
@@ -7,7 +6,6 @@ from astropy.io import fits as pf
 import numpy as np
 import matplotlib.pyplot as plt
 import os
-import commands
 import sys
 import time
 from scipy import interpolate

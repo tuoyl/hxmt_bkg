@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 #!coding=utf-8
 """
 #Version: 1.0                            Jun. 3rd, 2018
@@ -70,6 +69,14 @@ from collections import OrderedDict
 from sys import argv
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+
+try:
+    # Python 2
+    xrange
+except NameError:
+    # Python 3, xrange is now named range
+    xrange = range
+
 print( "-"*10,"import end","-"*10 )
 ########################
 def comp4(a1,a2,b1,b2):

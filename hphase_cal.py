@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from __future__ import division
 from astropy.io import fits
@@ -7,6 +7,12 @@ import matplotlib.pyplot as plt
 import sys
 import argparse
 
+try:
+    # Python 2
+    xrange
+except NameError:
+    # Python 3, xrange is now named range
+    xrange = range
 
 #read data file
 def read_data(filename, colname='TDB'):

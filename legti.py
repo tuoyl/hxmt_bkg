@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 #!coding=utf-8
 """
 #Version: 1.0                            Jun. 3rd, 2018
